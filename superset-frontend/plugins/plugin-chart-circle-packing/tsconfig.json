@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "declarationDir": "..lib",
+    "outDir": "..lib",
+    "rootDir": "src"
+  },
+  "exclude": ["..lib", "test"],
+  "include": ["src/**/*", "types/**/*", "../../types/**/*"],
+  "extends": "../../tsconfig.json",
+  "references": [
+    {
+      "path": "../../packages/superset-ui-chart-controls"
+    },
+    {
+      "path": "../../packages/superset-ui-core"
+    }
+  ]
+}

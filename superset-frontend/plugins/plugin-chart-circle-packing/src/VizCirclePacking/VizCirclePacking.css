@@ -1,0 +1,23 @@
+.tva-viz-circle-packing-wrapper {
+  width: 100%;
+  /* height: 100%; */
+  position: relative;
+  color: var(--basic-black);
+}
+
+.tva-viz-circle-packing-wrapper .circle-group {
+  transition: opacity 0.5s;
+}
+
+.tva-viz-circle-packing-wrapper .circle-group.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tva-viz-circle-packing-wrapper .circle-outer:hover {
+  /* cursor: pointer; */
+}
+
+.tva-viz-circle-packing-wrapper .unselected {
+  opacity: 0.3;
+}

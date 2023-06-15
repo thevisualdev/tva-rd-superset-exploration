@@ -33,7 +33,6 @@ import VizCirclePacking from './VizCirclePacking/VizCirclePacking';
 // https://github.com/apache-superset/superset-ui/blob/master/packages/superset-ui-core/src/style/index.ts
 
 const Styles = styled.div<SupersetPluginChartCirclePackingStylesProps>`
-  background-color: ${({ theme }) => theme.colors.secondary.light2};
   padding: ${({ theme }) => theme.gridUnit * 4}px;
   border-radius: ${({ theme }) => theme.gridUnit * 2}px;
   height: ${({ height }) => height}px;
@@ -68,8 +67,16 @@ export default function SupersetPluginChartCirclePacking(
 ) {
   // height and width are the height and width of the DOM element as it exists in the dashboard.
   // There is also a `data` prop, which is, of course, your DATA 🎉
-  const { data, height, width, d3hierarchy, d3pack, d3Select, d3scaleLinear } =
-    props;
+  const {
+    data,
+    height,
+    width,
+    d3hierarchy,
+    d3pack,
+    d3Select,
+    d3scaleLinear,
+    // d3transition,
+  } = props;
 
   const rootElem = createRef<HTMLDivElement>();
 
@@ -91,13 +98,14 @@ export default function SupersetPluginChartCirclePacking(
       width={width}
     >
       <h3>{props.headerText}</h3>
-      <pre>${JSON.stringify(data, null, 2)}</pre>
+      {/* <pre>${JSON.stringify(data, null, 2)}</pre> */}
       <VizCirclePacking
         data={data}
         d3hierarchy={d3hierarchy}
         d3pack={d3pack}
         d3Select={d3Select}
         d3scaleLinear={d3scaleLinear}
+        // d3transition={d3transition}
       />
     </Styles>
   );

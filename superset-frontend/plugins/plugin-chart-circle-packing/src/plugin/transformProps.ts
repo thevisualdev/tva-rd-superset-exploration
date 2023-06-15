@@ -21,6 +21,7 @@ import { ChartProps, TimeseriesDataRecord } from '@superset-ui/core';
 import { hierarchy as d3hierarchy, pack as d3pack } from 'd3-hierarchy';
 import { select as d3Select } from 'd3-selection';
 import { scaleLinear as d3scaleLinear } from 'd3-scale';
+// import * as d3transition from 'd3-transition';
 
 export default function transformProps(chartProps: ChartProps) {
   /**
@@ -53,7 +54,7 @@ export default function transformProps(chartProps: ChartProps) {
    * be seen until restarting the development server.
    */
   const { width, height, formData, queriesData } = chartProps;
-  const { boldText, headerFontSize, headerText } = formData;
+  const { boldText, headerFontSize, headerText, cols } = formData;
   const data = queriesData[0].data as TimeseriesDataRecord[];
 
   console.log('formData via TransformProps.ts', formData);
@@ -62,6 +63,7 @@ export default function transformProps(chartProps: ChartProps) {
     width,
     height,
     data,
+    cols,
     // and now your control data, manipulated as needed, and passed through as props!
     boldText,
     headerFontSize,
@@ -70,5 +72,6 @@ export default function transformProps(chartProps: ChartProps) {
     d3pack,
     d3Select,
     d3scaleLinear,
+    // d3transition,
   };
 }

@@ -79,6 +79,8 @@ import { HandlebarsChartPlugin } from '@superset-ui/plugin-chart-handlebars';
 import FilterBoxChartPlugin from '../FilterBox/FilterBoxChartPlugin';
 import TimeTableChartPlugin from '../TimeTable';
 
+import { SupersetPluginChartCirclePacking } from '@superset-ui/plugin-chart-circle-packing';
+
 export default class MainPreset extends Preset {
   constructor() {
     const experimentalplugins = isFeatureEnabled(
@@ -160,6 +162,10 @@ export default class MainPreset extends Preset {
         new EchartsTreeChartPlugin().configure({ key: 'tree_chart' }),
         new EchartsSunburstChartPlugin().configure({ key: 'sunburst_v2' }),
         new HandlebarsChartPlugin().configure({ key: 'handlebars' }),
+
+        new SupersetPluginChartCirclePacking().configure({
+          key: 'circle_packing',
+        }),
         ...experimentalplugins,
       ],
     });

@@ -45,5 +45,6 @@ export type SupersetPluginChartCirclePackingProps =
       d3pack: any;
       d3Select: any;
       d3scaleLinear: any;
+      // d3transition: any;
       // add typing here for the props you pass in from transformProps.ts!
     };

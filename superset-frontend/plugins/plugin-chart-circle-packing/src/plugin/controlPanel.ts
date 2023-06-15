@@ -17,7 +17,11 @@
  * under the License.
  */
 import { t, validateNonEmpty } from '@superset-ui/core';
-import { ControlPanelConfig, sections, sharedControls } from '@superset-ui/chart-controls';
+import {
+  ControlPanelConfig,
+  sections,
+  sharedControls,
+} from '@superset-ui/chart-controls';
 
 const config: ControlPanelConfig = {
   /**
@@ -140,7 +144,7 @@ const config: ControlPanelConfig = {
             name: 'header_text',
             config: {
               type: 'TextControl',
-              default: 'Hello, World!',
+              default: 'Circle packing',
               renderTrigger: true,
               // ^ this makes it apply instantaneously, without triggering a "run query" button
               label: t('Header Text'),

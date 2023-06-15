@@ -22,7 +22,7 @@ const VizCirclePacking = props => {
   // , normalized, filtersUnit, hoverOrgName
 
   const width = 1200;
-  const height = 900;
+  const height = 1200;
   const normalizedCircleRadius = 15;
   const circlePadding = 15;
 
@@ -30,8 +30,8 @@ const VizCirclePacking = props => {
   // D3 objects.
   const [circleGroups, setCircleGroups] = useState(null);
   const [outerCircles, setOuterCircles] = useState(null);
-  const [innerCircles, setInnerCircles] = useState(null);
-  // const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  // const [innerCircles, setInnerCircles] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [selectedDatum, setSelectedDatum] = useState(null);
   // const [previousFiltersUnit, setPreviousFiltersUnit] = useState([]);
   const [currentDataUnits, setCurrentDataUnits] = useState([]);
@@ -43,9 +43,9 @@ const VizCirclePacking = props => {
       .append('g')
       .attr('class', 'circle-group')
       .attr('transform', d => {
-        if (d.children && d.data.orgType) {
+        if (d.children && d.data.gender) {
           const circleSize = d.r * 2;
-          minMaxCodePosition[d.data.orgType] = {
+          minMaxCodePosition[d.data.gender] = {
             min: { x: d.x, y: d.y },
             max: { x: d.x + circleSize, y: d.y + circleSize },
           };
@@ -59,31 +59,38 @@ const VizCirclePacking = props => {
     return res;
   }
 
-  function getInnerCircleSize(d, referenceSize) {
-    return referenceSize * Math.min(1, d.data.activeUsers / d.data.totalUsers);
-  }
+  // function getInnerCircleSize(d, referenceSize) {
+  //   return referenceSize * Math.min(1, d.data.activeUsers / d.data.totalUsers);
+  // }
 
-  function createInnerCircles(leaves) {
-    return leaves
-      .filter(d => !d.children)
-      .append('circle')
-      .attr('class', 'circle-inner')
-      .attr('r', d => getInnerCircleSize(d, d.r))
-      .attr('fill', d => `#${d.data.orgColor}`);
-  }
+  // function createInnerCircles(leaves) {
+  //   return leaves
+  //     .filter(d => !d.children)
+  //     .append('circle')
+  //     .attr('class', 'circle-inner')
+  //     .attr('r', d => getInnerCircleSize(d, d.r))
+  //     .attr('fill', d => (d.data.gender === 'boy' ? `orangered` : 'skyblue'));
+  // }
 
   function createOuterCircles(leaves) {
     return leaves
       .append('circle')
       .attr('class', d => (d.children ? null : 'circle-outer'))
       .attr('r', d => (!Number.isNaN(d.r) ? d.r : 0))
-      .attr('fill', 'transparent')
-      .attr('stroke', d => (d.children ? 'transparent' : `#${d.data.orgColor}`))
+      .attr('fill', d =>
+        d.children
+          ? 'crimson'
+          : d.data.gender === 'boy'
+          ? `orangered`
+          : 'skyblue',
+      )
+      .attr('stroke', 'darkgrey')
       .attr('strokeWidth', 0.5)
-      .on('mousemove', (e, d) => {
+      .attr('opacity', d => (d.children ? 0.1 : 1))
+      .on('mousemove', d => {
         if (!d.children) {
           if (d !== selectedDatum) {
-            setSelectedDatum(d);
+            setSelectedDatum(d.data);
           }
 
           // setTooltipPosition({ x: e.offsetX, y: e.offsetY });
@@ -102,10 +109,13 @@ const VizCirclePacking = props => {
       // complicated state management between new and existing nodes.
       .data(packed.descendants(), d => d)
       .enter();
+
     leaves = createLeaves(leaves);
     setCircleGroups(leaves);
-    const inner = createInnerCircles(leaves);
-    setInnerCircles(inner);
+
+    // const inner = createInnerCircles(leaves);
+    // setInnerCircles(inner);
+
     const outer = createOuterCircles(leaves);
     setOuterCircles(outer);
   }
@@ -120,12 +130,18 @@ const VizCirclePacking = props => {
           const leaves = createLeaves(enter);
           setCircleGroups(leaves);
 
-          const inner = createInnerCircles(leaves).attr('opacity', 0);
-          inner.transition().duration(transitionDuration).attr('opacity', 1);
-          setInnerCircles(inner);
+          // const inner = createInnerCircles(leaves).attr('opacity', 0);
+          // inner
+          //   // .transition()
+          //   // .duration(transitionDuration)
+          //   .attr('opacity', 1);
+          // setInnerCircles(inner);
 
           const outer = createOuterCircles(leaves).attr('opacity', 0);
-          outer.transition().duration(transitionDuration).attr('opacity', 1);
+          outer
+            // .transition()
+            // .duration(transitionDuration)
+            .attr('opacity', 1);
           setOuterCircles(outer);
 
           // if (normalized) {
@@ -138,14 +154,14 @@ const VizCirclePacking = props => {
         },
         update =>
           update
-            .transition()
-            .duration(transitionDuration)
+            // .transition()
+            // .duration(transitionDuration)
             .attr('transform', d => `translate(${d.x + 1},${d.y + 1})`),
         exit =>
           exit
-            .transition()
-            .duration(transitionDuration)
-            .attr('opacity', 0)
+            // .transition()
+            // .duration(transitionDuration)
+            // .attr('opacity', 0)
             .remove(),
       );
   }
@@ -210,7 +226,7 @@ const VizCirclePacking = props => {
         const minUsers = minBy(data, 'COUNT(state)')['COUNT(state)'];
         const maxUsers = maxBy(data, 'COUNT(state)')['COUNT(state)'];
         const meanUsers = meanBy(data, 'COUNT(state)');
-        const avgSpacePerDatum = height / data.length;
+        const avgSpacePerDatum = (height * 0.5) / data.length;
         const minFactor = (meanUsers - minUsers) / meanUsers;
         const maxFactor = maxUsers / meanUsers;
 
@@ -219,7 +235,7 @@ const VizCirclePacking = props => {
           .range([avgSpacePerDatum * minFactor, avgSpacePerDatum * maxFactor]);
 
         const dataByUnit = Object.keys(dataByUnitObj).map(unit => ({
-          orgType: unit,
+          gender: unit,
           children: dataByUnitObj[unit],
         }));
 
@@ -281,7 +297,7 @@ const VizCirclePacking = props => {
   // function showFiltersUnitBlobs(fromNewData = false) {
   //   circleGroups.classed(
   //     'hide',
-  //     d => filtersUnit.length && !filtersUnit.includes(d.data.orgType),
+  //     d => filtersUnit.length && !filtersUnit.includes(d.data.gender),
   //   );
 
   //   // Transform the circle that contains all units of the selected code
@@ -297,7 +313,7 @@ const VizCirclePacking = props => {
   //       const selectionRadii = getRadiiForCodes(minMaxPositions);
 
   //       circleGroups
-  //         .filter(d => !d.children && filtersUnit.includes(d.data.orgType))
+  //         .filter(d => !d.children && filtersUnit.includes(d.data.gender))
   //         .transition()
   //         .duration(500)
   //         .attr('transform', d => {
@@ -410,23 +426,18 @@ const VizCirclePacking = props => {
   return (
     <div className="tva-viz-circle-packing-wrapper'">
       <svg id="tva-viz-circle-packing" viewBox={`0 0 ${width} ${height}`} />
-      {/* <pre>${JSON.stringify(data, null, 2)}</pre> */}
-      <CirclePackingLegend />
 
-      {/* {selectedDatum && (
-        <VizTooltip
-          title={selectedDatum.data.orgType}
-          x={tooltipPosition.x}
-          y={tooltipPosition.y}
-          data={{
-            'Users (%)': Math.round(
-              (selectedDatum.data.activeUsers / selectedDatum.data.totalUsers) *
-                100,
-            ),
-          }}
-          flip
-        />
-      )} */}
+      {selectedDatum && (
+        <div
+          className="tva-viz-circle-packing__tooltip"
+          // style={{
+          //   '--tooltip-x': tooltipPosition.x,
+          //   '--tooltip-y': tooltipPosition.y,
+          // }}
+        >
+          {selectedDatum.name}: <strong>{selectedDatum['COUNT(state)']}</strong>
+        </div>
+      )}
     </div>
   );
 };

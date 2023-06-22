@@ -9,6 +9,8 @@ import maxBy from 'lodash/maxBy';
 import meanBy from 'lodash/meanBy';
 // import isEqual from 'lodash/isEqual';
 
+import { styled } from '@superset-ui/core';
+
 // import 'd3-transition';
 
 // import VizTooltip from '../VizTooltip/VizTooltip';
@@ -17,14 +19,48 @@ import CirclePackingLegend from './CirclePackingLegend';
 import './VizCirclePacking.css';
 // import { SupersetPluginChartCirclePackingProps } from '../types';
 
+const CirclePackingWrapper = styled.div`
+  width: 100%;
+  max-height: 500px;
+  position: relative;
+  color: var(--basic-black);
+  padding: 0 4rem;
+`;
+
+const TooltipWrapper = styled.div`
+  padding: 0.15rem 0.25rem;
+  background-color: white;
+  position: absolute;
+  left: 0;
+  top: 1rem;
+`;
+
 const VizCirclePacking = props => {
-  const { data, d3hierarchy, d3pack, d3Select, d3scaleLinear } = props;
+  const {
+    numericKey,
+    cols,
+    data,
+    d3hierarchy,
+    d3pack,
+    d3Select,
+    d3scaleLinear,
+  } = props;
   // , normalized, filtersUnit, hoverOrgName
 
   const width = 1200;
   const height = 1200;
   const normalizedCircleRadius = 15;
   const circlePadding = 15;
+  const [groupingKey, singlePointKey] = cols;
+  const groupingColors = [...new Set(data.map(d => d[groupingKey]))].reduce(
+    (prev, next) => {
+      prev[next] = `rgb(${Math.random() * 360}, ${Math.random() * 360}, ${
+        Math.random() * 360
+      })`;
+      return prev;
+    },
+    {},
+  );
 
   // This is not a strictly correct way to use React state since we'll mutate these
   // D3 objects.
@@ -43,9 +79,9 @@ const VizCirclePacking = props => {
       .append('g')
       .attr('class', 'circle-group')
       .attr('transform', d => {
-        if (d.children && d.data.gender) {
+        if (d.children && d.data[groupingKey]) {
           const circleSize = d.r * 2;
-          minMaxCodePosition[d.data.gender] = {
+          minMaxCodePosition[d.data[groupingKey]] = {
             min: { x: d.x, y: d.y },
             max: { x: d.x + circleSize, y: d.y + circleSize },
           };
@@ -69,7 +105,7 @@ const VizCirclePacking = props => {
   //     .append('circle')
   //     .attr('class', 'circle-inner')
   //     .attr('r', d => getInnerCircleSize(d, d.r))
-  //     .attr('fill', d => (d.data.gender === 'boy' ? `orangered` : 'skyblue'));
+  //     .attr('fill', d => (d.data[level1key] === 'boy' ? `orangered` : 'skyblue'));
   // }
 
   function createOuterCircles(leaves) {
@@ -78,15 +114,11 @@ const VizCirclePacking = props => {
       .attr('class', d => (d.children ? null : 'circle-outer'))
       .attr('r', d => (!Number.isNaN(d.r) ? d.r : 0))
       .attr('fill', d =>
-        d.children
-          ? 'crimson'
-          : d.data.gender === 'boy'
-          ? `orangered`
-          : 'skyblue',
+        d.children ? 'crimson' : groupingColors[d.data[groupingKey]],
       )
       .attr('stroke', 'darkgrey')
       .attr('strokeWidth', 0.5)
-      .attr('opacity', d => (d.children ? 0.1 : 1))
+      .attr('opacity', d => (d.children ? 0.05 : 1))
       .on('mousemove', d => {
         if (!d.children) {
           if (d !== selectedDatum) {
@@ -207,7 +239,7 @@ const VizCirclePacking = props => {
   // }, [filtersUnit]);
 
   useEffect(() => {
-    const dataByUnitObj = groupBy(data, 'gender');
+    const dataByUnitObj = groupBy(data, groupingKey);
 
     // const filtersUnitChanged = !isEqual(previousFiltersUnit, filtersUnit);
 
@@ -223,19 +255,21 @@ const VizCirclePacking = props => {
     // if (data && (!filtersUnitChanged || dataUnitsChanged)) {
     if (data) {
       if (data.length) {
-        const minUsers = minBy(data, 'COUNT(state)')['COUNT(state)'];
-        const maxUsers = maxBy(data, 'COUNT(state)')['COUNT(state)'];
-        const meanUsers = meanBy(data, 'COUNT(state)');
-        const avgSpacePerDatum = (height * 0.5) / data.length;
-        const minFactor = (meanUsers - minUsers) / meanUsers;
-        const maxFactor = maxUsers / meanUsers;
+        console.log(dataByUnitObj);
+
+        const minCounts = minBy(data, numericKey)[numericKey];
+        const maxCounts = maxBy(data, numericKey)[numericKey];
+        const meanCounts = meanBy(data, numericKey);
+        const avgSpacePerDatum = (height * 0.1) / Math.sqrt(data.length);
+        const minFactor = (meanCounts - minCounts) / meanCounts;
+        const maxFactor = maxCounts / meanCounts;
 
         const getCircleRadius = d3scaleLinear()
-          .domain([minUsers, maxUsers])
+          .domain([minCounts, maxCounts])
           .range([avgSpacePerDatum * minFactor, avgSpacePerDatum * maxFactor]);
 
         const dataByUnit = Object.keys(dataByUnitObj).map(unit => ({
-          gender: unit,
+          [groupingKey]: unit,
           children: dataByUnitObj[unit],
         }));
 
@@ -247,7 +281,7 @@ const VizCirclePacking = props => {
         const createPack = d3pack()
           .size([width, height])
           .padding(circlePadding)
-          .radius(d => getCircleRadius(d.data['COUNT(state)']));
+          .radius(d => getCircleRadius(d.data[numericKey]));
 
         const createNormalizedPack = d3pack()
           .size([width, height])
@@ -259,11 +293,13 @@ const VizCirclePacking = props => {
         const normalizedPacked = createNormalizedPack(normalizedHierarchy);
         zipPackedData(packed, normalizedPacked);
         // If no viz exists, create one. Else, update existing svg
-        if (!circleGroups) {
-          createCirclePackingViz(packed);
-        } else {
-          updateCirclePackingViz(packed);
+        if (circleGroups) {
+          circleGroups.data([], d => d).join(exit => exit.remove());
         }
+
+        createCirclePackingViz(packed);
+
+        // createCirclePackingViz(packed);
         // if (filtersUnitChanged) {
         //   showFiltersUnitBlobs(true)
         // }
@@ -297,7 +333,7 @@ const VizCirclePacking = props => {
   // function showFiltersUnitBlobs(fromNewData = false) {
   //   circleGroups.classed(
   //     'hide',
-  //     d => filtersUnit.length && !filtersUnit.includes(d.data.gender),
+  //     d => filtersUnit.length && !filtersUnit.includes(d.data[level1key]),
   //   );
 
   //   // Transform the circle that contains all units of the selected code
@@ -313,7 +349,7 @@ const VizCirclePacking = props => {
   //       const selectionRadii = getRadiiForCodes(minMaxPositions);
 
   //       circleGroups
-  //         .filter(d => !d.children && filtersUnit.includes(d.data.gender))
+  //         .filter(d => !d.children && filtersUnit.includes(d.data[level1key]))
   //         .transition()
   //         .duration(500)
   //         .attr('transform', d => {
@@ -424,21 +460,21 @@ const VizCirclePacking = props => {
   // }
 
   return (
-    <div className="tva-viz-circle-packing-wrapper'">
+    <CirclePackingWrapper>
       <svg id="tva-viz-circle-packing" viewBox={`0 0 ${width} ${height}`} />
 
       {selectedDatum && (
-        <div
-          className="tva-viz-circle-packing__tooltip"
-          // style={{
-          //   '--tooltip-x': tooltipPosition.x,
-          //   '--tooltip-y': tooltipPosition.y,
-          // }}
+        <TooltipWrapper
+        // style={{
+        //   '--tooltip-x': tooltipPosition.x,
+        //   '--tooltip-y': tooltipPosition.y,
+        // }}
         >
-          {selectedDatum.name}: <strong>{selectedDatum['COUNT(state)']}</strong>
-        </div>
+          {selectedDatum[singlePointKey]}:{' '}
+          <strong>{selectedDatum[numericKey]}</strong>
+        </TooltipWrapper>
       )}
-    </div>
+    </CirclePackingWrapper>
   );
 };
 

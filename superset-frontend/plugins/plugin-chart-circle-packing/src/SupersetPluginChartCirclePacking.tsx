@@ -75,6 +75,8 @@ export default function SupersetPluginChartCirclePacking(
     d3pack,
     d3Select,
     d3scaleLinear,
+    cols,
+    metrics,
     // d3transition,
   } = props;
 
@@ -101,6 +103,8 @@ export default function SupersetPluginChartCirclePacking(
       {/* <pre>${JSON.stringify(data, null, 2)}</pre> */}
       <VizCirclePacking
         data={data}
+        cols={cols}
+        numericKey={metrics[0].label}
         d3hierarchy={d3hierarchy}
         d3pack={d3pack}
         d3Select={d3Select}
